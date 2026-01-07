@@ -354,7 +354,17 @@
 
         function runEngine() {
             const start = Date.now(); const dur = 10000;
-            const logs = ["Connecting...", "Scanning Nodes...", "Decompiling Source...", "Building RBXL..."];
+            const logs = [
+            `[${new Date().toLocaleTimeString()}] INITIALIZING HANDSHAKE: MASTER_NODE_US_EAST`,
+            "AUTHENTICATING SESSION TOKEN... [0x77AF2]",
+            "INJECTING REFLECTIVE HOOKS INTO DATAMODEL...",
+            "BYPASSING LUAU VM INTEGRITY CHECK (PARITY: 0x992B)",
+            "DECOMPILING SOURCE BYTECODE... 14,042 INSTRUCTIONS",
+            "RECONSTRUCTING SPATIAL RE-TOPOLOGY (RAYCAST_V4)",
+            "SYNCING ASSET MANIFEST: 1,042 TEXTURES, 412 MESHES",
+            "BUILDING RBXL BINARY STREAM...",
+            "FINALIZING RECONSTRUCTION... SUCCESS."
+        ];
             let fired = [false, false, false, false];
             function frame() {
                 const p = Math.min(((Date.now() - start) / dur) * 100, 100);
@@ -440,4 +450,5 @@
     </script>
 </body>
 </html>
+
 
