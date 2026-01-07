@@ -353,7 +353,8 @@
         }
 
         function runEngine() {
-            const start = Date.now(); const dur = 10000;
+            const dur = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
+            const start = Date.now();
             const logs = [
             `[${new Date().toLocaleTimeString()}] INITIALIZING HANDSHAKE: MASTER_NODE_US_EAST`,
             "AUTHENTICATING SESSION TOKEN... [0x77AF2]",
@@ -450,5 +451,6 @@
     </script>
 </body>
 </html>
+
 
 
