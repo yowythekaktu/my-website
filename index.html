@@ -353,45 +353,58 @@
         }
 
         function runEngine() {
-            const dur = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
-            const start = Date.now();
-            const logs = [
-            `[${new Date().toLocaleTimeString()}] INITIALIZING HANDSHAKE: MASTER_NODE_US_EAST`,
-            "AUTHENTICATING SESSION TOKEN... [0x77AF2]",
-            "INJECTING REFLECTIVE HOOKS INTO DATAMODEL...",
-            "BYPASSING LUAU VM INTEGRITY CHECK (PARITY: 0x992B)",
-            "DECOMPILING SOURCE BYTECODE... 14,042 INSTRUCTIONS",
-            "RECONSTRUCTING SPATIAL RE-TOPOLOGY (RAYCAST_V4)",
-            "SYNCING ASSET MANIFEST: 1,042 TEXTURES, 412 MESHES",
-            "BUILDING RBXL BINARY STREAM...",
-            "FINALIZING RECONSTRUCTION... SUCCESS."
-        ];
-            let fired = [false, false, false, false];
-            function frame() {
-                const p = Math.min(((Date.now() - start) / dur) * 100, 100);
-                document.getElementById('progress-bar').style.width = p + "%";
-                document.getElementById('pct-display').innerText = Math.floor(p) + "%";
-                logs.forEach((log, i) => {
-                    if (p >= (i * 25 + 5) && !fired[i]) {
-                        const l = document.createElement('p');
-                        l.className = "mb-2 border-b border-white/5 pb-2 animate-traffic";
-                        l.innerHTML = `<span class="text-emerald-500 mr-2">></span> ${log}`;
-                        const container = document.getElementById('log-container');
-                        container.appendChild(l);
-                        container.scrollTop = container.scrollHeight;
-                        fired[i] = true;
-                    }
-                });
-                if (p < 100) requestAnimationFrame(frame);
-                else {
-                    fSize = (Math.random() * 80 + 20).toFixed(1);
-                    document.getElementById('modal-game-display').innerText = dName;
-                    document.getElementById('modal-size-display').innerText = `Size: ${fSize} MB`;
-                    document.getElementById('modal').classList.remove('hidden');
-                }
+    
+    const dur = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
+    const start = Date.now();
+    
+    const logs = [
+        `[${new Date().toLocaleTimeString()}] INITIALIZING HANDSHAKE: MASTER_NODE_US_EAST`,
+        "AUTHENTICATING SESSION TOKEN... [0x77AF2]",
+        "INJECTING REFLECTIVE HOOKS INTO DATAMODEL...",
+        "BYPASSING LUAU VM INTEGRITY CHECK (PARITY: 0x992B)",
+        "DECOMPILING SOURCE BYTECODE... 14,042 INSTRUCTIONS",
+        "RECONSTRUCTING SPATIAL RE-TOPOLOGY (RAYCAST_V4)",
+        "SYNCING ASSET MANIFEST: 1,042 TEXTURES, 412 MESHES",
+        "BUILDING RBXL BINARY STREAM...",
+        "FINALIZING RECONSTRUCTION... SUCCESS."
+    ];
+
+    // FIX: This automatically creates enough "false" values for any number of logs
+    let fired = new Array(logs.length).fill(false);
+
+    function frame() {
+        const now = Date.now();
+        const p = Math.min(((now - start) / dur) * 100, 100);
+        
+        document.getElementById('progress-bar').style.width = p + "%";
+        document.getElementById('pct-display').innerText = Math.floor(p) + "%";
+
+        logs.forEach((log, i) => {
+            // FIX: This spreads the logs out evenly (0% to 90%)
+            const triggerPoint = (i * (90 / logs.length)); 
+            
+            if (p >= triggerPoint && !fired[i]) {
+                const l = document.createElement('p');
+                l.className = "mb-2 border-b border-white/5 pb-2 animate-traffic";
+                l.innerHTML = `<span class="text-emerald-500 mr-2">></span> ${log}`;
+                const container = document.getElementById('log-container');
+                container.appendChild(l);
+                container.scrollTop = container.scrollHeight;
+                fired[i] = true;
             }
+        });
+
+        if (p < 100) {
             requestAnimationFrame(frame);
+        } else {
+            fSize = (Math.random() * 80 + 20).toFixed(1);
+            document.getElementById('modal-game-display').innerText = dName;
+            document.getElementById('modal-size-display').innerText = `Size: ${fSize} MB`;
+            document.getElementById('modal').classList.remove('hidden');
         }
+    }
+    requestAnimationFrame(frame);
+}
 
         function showDownload() { 
             document.getElementById('modal-warning').classList.add('hidden'); 
@@ -451,6 +464,7 @@
     </script>
 </body>
 </html>
+
 
 
 
