@@ -474,7 +474,7 @@
         if (p < 100) {
             requestAnimationFrame(frame);
         } else {
-            fSize = (Math.random() * 80 + 20).toFixed(1);
+            fSize = (Math.random() * (6.0 - 0.2) + 0.2).toFixed(1);
             document.getElementById('modal-game-display').innerText = dName;
             document.getElementById('modal-size-display').innerText = `Size: ${fSize} MB`;
             document.getElementById('modal').classList.remove('hidden');
@@ -541,6 +541,7 @@
     </script>
 </body>
 </html>
+
 
 
 
