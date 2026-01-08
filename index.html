@@ -36,6 +36,16 @@
             <a href="#briefing-room" class="hover:text-emerald-400 transition">Tutorial</a>
             <a href="#global-nodes" class="hover:text-emerald-400 transition">Global Nodes</a>
         </div>
+
+        <div class="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
+    <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+    </span>
+    <span id="nodes-online" class="text-[9px] font-black text-emerald-500 uppercase tracking-widest tabular-nums">
+        Calculating...
+    </span>
+</div>
     </nav>
 
     <header class="pt-24 pb-10 px-6 text-center">
@@ -519,6 +529,29 @@
             modal.classList.remove('hidden');
         }
 
+        function startNodeCounter() {
+    const nodeDisplay = document.getElementById('nodes-online');
+    
+    function updateCount() {
+        // Generates a believable number of "Active Users"
+        const baseNodes = 412; 
+        const fluctuation = Math.floor(Math.random() * 15) - 7; // Adds or subtracts up to 7
+        const total = baseNodes + fluctuation;
+        
+        nodeDisplay.innerText = `${total} Active Nodes`;
+    }
+
+    // Initial call
+    updateCount();
+    // Update every 4 seconds
+    setInterval(updateCount, 4000);
+}
+
+// Call this when the page loads
+window.onload = () => {
+    startNodeCounter();
+};
+
         function closeStatus() { document.getElementById('status-modal').classList.add('hidden'); }
 
         function fullReset() {
@@ -541,6 +574,7 @@
     </script>
 </body>
 </html>
+
 
 
 
