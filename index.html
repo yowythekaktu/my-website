@@ -100,6 +100,19 @@
                 <div id="traffic-feed" class="space-y-4"></div>
             </div>
         </div>
+
+        <div class="text-center mb-6">
+    <button onclick="document.getElementById('tut-vid').classList.toggle('hidden')" 
+            class="text-[9px] font-bold text-emerald-500/60 hover:text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-full transition-all uppercase tracking-widest">
+        [ Need Help? View Tutorial ]
+    </button>
+</div>
+
+<div id="tut-vid" class="hidden mb-6 animate-traffic">
+    <div class="relative rounded-2xl overflow-hidden border border-white/10 aspect-video bg-black/40">
+        <video controls class="w-full h-full"><source src="tutorial.mp4" type="video/mp4"></video>
+    </div>
+</div>
     </section>
 
     <section id="global-nodes" class="max-w-6xl mx-auto py-24 px-6">
@@ -492,6 +505,7 @@
     </script>
 </body>
 </html>
+
 
 
 
