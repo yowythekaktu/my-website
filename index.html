@@ -22,7 +22,7 @@
         .animate-traffic { animation: slideIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
     </style>
 </head>
-<body onload="initTraffic()">
+<body">
     <div class="fixed inset-0 grid-bg z-[-1]"></div>
 
     <nav class="flex items-center justify-between px-8 md:px-20 py-8 sticky top-0 z-[100] backdrop-blur-md">
@@ -344,7 +344,7 @@
             trafficData.forEach(item => {
                 const div = document.createElement('div');
                 div.className = `p-4 rounded-2xl border border-white/5 animate-traffic ${item.live ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03]'}`;
-                div.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold ${item.live ? 'text-emerald-400' : 'text-zinc-500'}">${item.live ? 'LIVE EXTRACTION' : '@Anonymous'}</span><span id="time-${item.id}" class="text-[8px] text-emerald-500 font-bold uppercase font-mono">Just now</span></div><div class="text-[11px] text-white font-bold uppercase italic tracking-tighter">Copied ${item.game}</div>`;
+                div.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold ${item.live ? 'text-emerald-400' : 'text-zinc-500'}">${item.live ? 'You' : '@Anonymous'}</span><span id="time-${item.id}" class="text-[8px] text-emerald-500 font-bold uppercase font-mono">Just now</span></div><div class="text-[11px] text-white font-bold uppercase italic tracking-tighter">Copied ${item.game}</div>`;
                 feed.appendChild(div);
             });
         }
@@ -388,7 +388,7 @@
                     }
                 });
             }, 1000);
-            setInterval(() => pushTraffic(g[Math.floor(Math.random()*g.length)]), 15000);
+            setInterval(() => pushTraffic(g[Math.floor(Math.random()*g.length)]), 10000);
         }
 
         document.getElementById('userInput').addEventListener('input', (e) => {
@@ -531,24 +531,20 @@
 
         function startNodeCounter() {
     const nodeDisplay = document.getElementById('nodes-online');
-    
     function updateCount() {
-        // Generates a believable number of "Active Users"
         const baseNodes = 412; 
-        const fluctuation = Math.floor(Math.random() * 15) - 7; // Adds or subtracts up to 7
+        const fluctuation = Math.floor(Math.random() * 15) - 7;
         const total = baseNodes + fluctuation;
-        
-        nodeDisplay.innerText = `${total} Active Users`;
+        if(nodeDisplay) nodeDisplay.innerText = `${total} Active Nodes`;
     }
-
-    // Initial call
     updateCount();
-    // Update every 4 seconds
     setInterval(updateCount, 4000);
 }
 
 // Call this when the page loads
 window.onload = () => {
+    initTraffic();
+    
     startNodeCounter();
 };
 
@@ -574,6 +570,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
