@@ -67,6 +67,19 @@
                 <div id="setup-phase">
                     <h2 class="text-3xl font-bold mb-2 tracking-tighter uppercase italic">Secure Uplink</h2>
                     <p class="text-zinc-500 text-xs mb-8">Enter DataModel session to begin sync protocol.</p>
+                    <div class="flex flex-col items-center gap-3">
+    <button onclick="document.getElementById('mini-tut').classList.toggle('hidden')" 
+            class="text-[9px] font-bold text-zinc-500 hover:text-emerald-500 transition-all uppercase tracking-widest">
+        [ ? ] Need Help?
+    </button>
+    
+    <div id="mini-tut" class="hidden w-full animate-traffic">
+        <div class="rounded-xl overflow-hidden border border-emerald-500/20 bg-black shadow-2xl aspect-video">
+            <video controls class="w-full h-full"><source src="tutorial.mp4" type="video/mp4"></video>
+        </div>
+        <p class="text-[8px] text-zinc-600 mt-2 italic text-center">Follow the visual protocol exactly.</p>
+    </div>
+</div>
                     <div class="max-w-md mx-auto space-y-4">
                         <div id="input-container" class="bg-black/60 border border-white/5 rounded-xl px-5 py-5 transition-all duration-300">
                             <input type="text" id="userInput" class="terminal-input" placeholder="[ PASTE SESSION PAYLOAD ]" autocomplete="off">
@@ -101,19 +114,6 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-center gap-3">
-    <button onclick="document.getElementById('mini-tut').classList.toggle('hidden')" 
-            class="text-[9px] font-bold text-zinc-500 hover:text-emerald-500 transition-all uppercase tracking-widest">
-        [ ? ] Need Help?
-    </button>
-    
-    <div id="mini-tut" class="hidden w-full animate-traffic">
-        <div class="rounded-xl overflow-hidden border border-emerald-500/20 bg-black shadow-2xl aspect-video">
-            <video controls class="w-full h-full"><source src="tutorial.mp4" type="video/mp4"></video>
-        </div>
-        <p class="text-[8px] text-zinc-600 mt-2 italic text-center">Follow the visual protocol exactly.</p>
-    </div>
-</div>
     </section>
 
     <section id="briefing-room" class="max-w-6xl mx-auto py-20 px-6">
@@ -542,6 +542,7 @@
     </script>
 </body>
 </html>
+
 
 
 
