@@ -341,9 +341,10 @@
         live: isLive 
     };
 
+    // FIX: Push the data to the array so the timer loop can find it
+    trafficData.unshift(entry);
+
     const feed = document.getElementById('traffic-feed');
-    
-    // Create the new item element
     const div = document.createElement('div');
     div.className = `p-4 rounded-2xl border border-white/5 traffic-item ${isLive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03]'}`;
     div.id = `item-${entry.id}`;
@@ -362,12 +363,11 @@
         </div>
     `;
 
-    // Add to top smoothly
     feed.prepend(div);
 
-    // Keep only the last 5 items
     if (feed.children.length > 5) {
         feed.removeChild(feed.lastChild);
+        trafficData.pop(); // Remove from data array too to save memory
     }
 }
 
@@ -553,19 +553,19 @@
 
        function startNodeCounter() {
     const nodeDisplay = document.getElementById('nodes-online');
-    function updateCount() {
-        const baseNodes = 412; 
-        const fluctuation = Math.floor(Math.random() * 14) - 7;
-        if(nodeDisplay) nodeDisplay.innerText = `${baseNodes + fluctuation} Active Users`;
-    }
-    updateCount();
-    setInterval(updateCount, 4000);
+    const update = () => {
+        // Generates a realistic number between 840 and 880
+        const count = 840 + Math.floor(Math.random() * 40);
+        nodeDisplay.innerText = `${count} Active Users`;
+    };
+    update();
+    setInterval(update, 5000); // Updates every 5 seconds
 }
 
-// THIS PART REPLACES YOUR OLD WINDOW.ONLOAD
+// Ensure everything starts on load
 window.onload = () => {
-    initTraffic();     // Starts the side-feed
-    startNodeCounter(); // Starts the top-nav counter
+    initTraffic();
+    startNodeCounter();
 };
 
         function closeStatus() { document.getElementById('status-modal').classList.add('hidden'); }
@@ -590,6 +590,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
