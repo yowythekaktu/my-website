@@ -326,7 +326,7 @@
 
         function pushTraffic(game, isLive = false) {
             const entry = { game, time: Date.now(), id: Math.random().toString(36).substr(2, 9), live: isLive };
-            trafficData.unshift(entry); if (trafficData.length > 5) trafficData.pop();
+            trafficData.unshift(entry); if (trafficData.length > 1) trafficData.pop();
             renderTraffic();
         }
 
@@ -559,6 +559,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
