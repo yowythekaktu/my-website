@@ -325,20 +325,51 @@
         }
 
         function pushTraffic(game, isLive = false) {
-            const entry = { game, time: Date.now(), id: Math.random().toString(36).substr(2, 9), live: isLive };
-            trafficData.unshift(entry); if (trafficData.length > 1) trafficData.pop();
-            renderTraffic();
-        }
+    const feed = document.getElementById('traffic-feed');
+    const id = Math.random().toString(36).substr(2, 9);
+    const entry = { game, time: Date.now(), id: id, live: isLive };
+    
+    // 1. Add to our data array for the timer loop
+    trafficData.unshift(entry);
+    if (trafficData.length > 6) trafficData.pop();
 
-        function renderTraffic() {
-            const feed = document.getElementById('traffic-feed'); feed.innerHTML = '';
-            trafficData.forEach(item => {
-                const div = document.createElement('div');
-                div.className = `p-4 rounded-2xl border border-white/5 animate-traffic ${item.live ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03]'}`;
-                div.innerHTML = `<div class="flex justify-between items-center mb-1"><span class="text-[10px] font-bold ${item.live ? 'text-emerald-400' : 'text-zinc-500'}">${item.live ? 'You' : '@Anonymous'}</span><span id="time-${item.id}" class="text-[8px] text-emerald-500 font-bold uppercase font-mono">Just now</span></div><div class="text-[11px] text-white font-bold uppercase italic tracking-tighter">Copied ${item.game}</div>`;
-                feed.appendChild(div);
-            });
-        }
+    // 2. Create the HTML element
+    const div = document.createElement('div');
+    div.id = `item-${id}`;
+    div.className = `p-4 rounded-2xl border border-white/5 animate-traffic ${isLive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/[0.03]'}`;
+    
+    div.innerHTML = `
+        <div class="flex justify-between items-center mb-1">
+            <span class="text-[10px] font-bold ${isLive ? 'text-emerald-400' : 'text-zinc-500'}">
+                ${isLive ? 'You' : '@Anonymous'}
+            </span>
+            <span id="time-${id}" class="text-[8px] text-emerald-500 font-bold uppercase font-mono">
+                Just now
+            </span>
+        </div>
+        <div class="text-[11px] text-white font-bold uppercase italic tracking-tighter">
+            Copied ${game}
+        </div>
+    `;
+
+    // 3. Smoothly Insert at the top
+    feed.prepend(div);
+
+    // 4. Remove the bottom item smoothly if we exceed the limit
+    if (feed.children.length > 5) {
+        const lastChild = feed.lastElementChild;
+        // Optional: Add a fade-out class before removing
+        lastChild.style.opacity = '0';
+        lastChild.style.transform = 'translateY(10px)';
+        lastChild.style.transition = 'all 0.4s ease';
+        
+        setTimeout(() => {
+            if (lastChild.parentNode === feed) {
+                feed.removeChild(lastChild);
+            }
+        }, 400);
+    }
+}
 
         function initTraffic() {
             const g = [
@@ -559,6 +590,7 @@ window.onload = () => {
     </script>
 </body>
 </html>
+
 
 
 
